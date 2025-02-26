@@ -4,7 +4,21 @@
 
 
 ## Overview
-A Model Context Protocol (MCP) server implementation that provides database interaction with Snowflake. This server enables running SQL queries with tools and intereacting with a memo of data insights presented as a resource.
+A Model Context Protocol (MCP) server implementation that provides database interaction with Snowflake. This server enables running SQL queries with tools and interacting with a memo of data insights presented as a resource.
+
+## Authentication Methods
+
+The server supports multiple authentication methods:
+
+1. **Username/Password Authentication** - Standard username and password login
+2. **Browser Authentication** - Uses Snowflake's browser-based authentication for SSO systems
+3. **OAuth Token** - Uses cached tokens from previous browser authentications
+
+When using browser authentication:
+- A browser window will open for you to log in with your SSO credentials
+- After successful login, the token is securely cached for future use
+- Subsequent connections will use the cached token without requiring browser login
+- Tokens are automatically refreshed when they expire
 
 ## Components
 
@@ -66,12 +80,12 @@ To install Snowflake Server for Claude Desktop automatically via [Smithery](http
 npx -y @smithery/cli install mcp_snowflake_server --client claude
 ```
 
-### Installing via UVX
+### Using Standard Authentication (via UVX)
 
 ```python
-# Add the server to your claude_desktop_config.json
+# Add the server to your claude_desktop_config.json with standard authentication
 "mcpServers": {
-  "snowflake_pip": {
+  "snowflake_std": {
       "command": "uvx",
       "args": [
           "mcp_snowflake_server",
@@ -98,7 +112,41 @@ npx -y @smithery/cli install mcp_snowflake_server --client claude
 }
 ```
 
-### Installing locally
+### Using Browser Authentication (via UVX)
+
+```python
+# Add the server to your claude_desktop_config.json with browser authentication
+"mcpServers": {
+  "snowflake_browser": {
+      "command": "uvx",
+      "args": [
+          "mcp_snowflake_server",
+          "--account",
+          "the_account",
+          "--warehouse",
+          "the_warehouse",
+          "--user",
+          "the_user",
+          "--role",
+          "the_role",
+          "--database",
+          "the_database",
+          "--schema",
+          "the_schema",
+          "--authenticator",
+          "browserauthentication",
+          # Optionally: "--token_cache_path", "/path/to/token/cache",
+          # Optionally: "--allow_write" (but not recommended)
+          # Optionally: "--log_dir", "/absolute/path/to/logs"
+          # Optionally: "--log_level", "DEBUG"/"INFO"/"WARNING"/"ERROR"/"CRITICAL"
+          # Optionally: "--exclude_tools", "{tool name}", ["{other tool name}"]
+      ]
+  }
+}
+```
+
+### Installing Locally
+
 ```python
 # Add the server to your claude_desktop_config.json
 "mcpServers": {
@@ -115,14 +163,19 @@ npx -y @smithery/cli install mcp_snowflake_server --client claude
           "the_warehouse",
           "--user",
           "the_user",
+          # Choose one of these authentication methods:
           "--password",
           "their_password",
+          # OR
+          "--authenticator",
+          "browserauthentication",
           "--role",
           "the_role"
           "--database",
           "the_database",
           "--schema",
           "the_schema",
+          # Optionally: "--token_cache_path", "/path/to/token/cache"
           # Optionally: "--allow_write" (but not recommended)
           # Optionally: "--log_dir", "/absolute/path/to/logs"
           # Optionally: "--log_level", "DEBUG"/"INFO"/"WARNING"/"ERROR"/"CRITICAL"
@@ -131,3 +184,20 @@ npx -y @smithery/cli install mcp_snowflake_server --client claude
   }
 }
 ```
+
+## Browser Authentication Details
+
+When using browser authentication:
+
+1. The first time you connect, a browser window will open automatically
+2. Log in with your SSO credentials in the browser
+3. The authentication token will be securely stored (encrypted) on your machine
+4. Future connections will use the stored token without opening a browser
+5. If the token expires, a new browser window will open for reauthentication
+
+You can specify a custom location for the token cache:
+```
+--token_cache_path "/path/to/your/token/cache"
+```
+
+The default location is `~/.snowflake_tokens`.
